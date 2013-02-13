@@ -1,34 +1,70 @@
-draw = require('lib/draw').draw
+ForceDiagram = require('lib/draw').ForceDiagram
 
 exports.App =
   class App
     constructor: (appName, dbName, db) ->
       [@appName, @dbName, @db] = [appName, dbName, db]
+      @nodes = []
+      @links = []
 
     run: =>
-      @db.view(appName + '/rfidScansByCreatedAtDesc', { success: @drawResult })
+      @fetch(@draw)
 
-    drawResult: (result) =>
-      readerDescriptions = _.map result.rows, (row) ->
-        row.value.reader_description
+      changes = @db.changes()
+      changes.onChange (data) =>
+       console.log "gonna fetch"
+       @fetch(@diagram.update)
 
-      readerNodes = _.map readerDescriptions, (readerDescription) ->
-        { 'name': readerDescription, 'group': 1 }
+    fetch: (cb) =>
+      d3.json '_view/scanNodes?group=true', (res) =>
+        nodes = _.pluck(res.rows, 'key')
+        nodeNames = _.pluck(nodes, 'name')
+        d3.json '_view/rfidScans?group=true', (res) =>
+          links = _.map res.rows, (row) =>
+            {
+              value: 1
+              'source': nodeNames.indexOf(row.key.source)
+              'target': nodeNames.indexOf(row.key.target)
+            }
 
-      tagIds = _.map result.rows, (row) ->
-        row.value.tag_id
+          @updateNodes(@nodes, nodes)
+          @updateLinks(@links, links)
+          cb() if cb
 
-      tagNodes = _.map tagIds, (tagId) ->
-        { 'name': tagId, 'group': 2 }
+    draw: =>
+      console.log "sup"
+      @diagram = new ForceDiagram(@nodes, @links)
 
-      nodeNames = _.union(_.uniq(readerDescriptions), _.uniq(tagIds))
-      nodes = _.union(tagNodes, readerNodes)
+    updateNodes: (array, newArray) =>
+      hasItem = (ary, candidate) ->
+        _.detect ary, (item) ->
+          item.name == candidate.name
 
-      links = _.map result.rows, (row) ->
-        readerIndex = nodeNames.indexOf(row.value.reader_description)
-        tagIndex = nodeNames.indexOf(row.value.tag_id)
+      # remove ones that have disappeared
+      # _.each array, (item) =>
+      #   if ! hasItem(newArray, item)
+      #     console.log("removing #{JSON.stringify(item)}")
+      #     array.splice(array.indexOf(item), 1)
 
-        # TODO: reduce to sum values
-        { 'source': readerIndex, 'target': tagIndex, value: 1 }
+      # append newcomers
+      _.each newArray, (item) =>
+        if ! hasItem(array, item)
+          console.log("adding #{JSON.stringify(item)}")
+          array.push(item)
 
-      draw({ nodes: nodes, links: links })
+    updateLinks: (array, newArray) =>
+      hasItem = (ary, candidate) ->
+        _.detect ary, (item) ->
+          (item.source == candidate.source) && (item.target == candidate.target)
+
+      # remove ones that have disappeared
+      # _.each array, (item) =>
+      #   if ! hasItem(newArray, item)
+      #     console.log("removing #{JSON.stringify(item)}")
+      #     array.splice(array.indexOf(item), 1)
+
+      # append newcomers
+      _.each newArray, (item) =>
+        if ! hasItem(array, item)
+          console.log("adding #{JSON.stringify(item)}")
+          array.push(item)
