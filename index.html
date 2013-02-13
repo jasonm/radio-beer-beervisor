@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>beervisor</title>
+    <link rel="stylesheet" type="text/css" href="static/style.css" />
+  </head>
+<body>
+  <script src="static/d3.v3.js"></script>
+  <script type="text/javascript" src="modules.js"></script>
+  <script type="text/javascript">
+    // Pull in packaged libraries
+    window._ = require('underscore')._;
+    window.jQuery = window.$ = require('jquery/core');
+    require('lib/jquery.couch');
+
+    // Establish our connection to the data we are embedded within
+    var appName = 'beervisor';
+    var dbName = require('db').current().url.replace('/', '');
+    var db = $.couch.db(dbName);
+
+    // Launch our custom app code
+    var App = require('lib/app').App;
+    var app = new App(appName, dbName, db);
+    app.run();
+  </script>
+
+  <script type="text/javascript">
+    // Support live-reload when running locally
+    if (document.location.hostname === "localhost") {
+      document.write('\x3Cscript type="text/javascript" src="http://localhost:9090">\x3C/script>');
+    }
+  </script>
+</body>
