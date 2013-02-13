@@ -1,0 +1,19 @@
+{
+  "name": "beervisor",
+  "version": "0.0.1",
+  "description": "kaleidoscopic enjoyment",
+  "attachments": ["index.html", "static"],
+  "coffee-script": {
+    "modules": ["lib"]
+  },
+  "modules": ["lib"],
+  "load": "lib/ddoc",
+  "dependencies": {
+    "jquery": null,
+    "coffee-script-precompiler": null,
+    "attachments": null,
+    "modules": null,
+    "properties": null,
+    "db": null
+  }
+}
